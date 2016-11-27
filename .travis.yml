@@ -1,38 +1,45 @@
-sudo: false
-language: android
-jdk:
-  - oraclejdk8
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: 94110b2b-1d58-46f7-9ed4-960efc266d87
+after_success:
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 720 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
 android:
   components:
-# first 'tools' updates SDK tools 'til last version ** in remote repository number 10 **
   - tools
-# second 'tools' updates SDK tools 'til last version ** in remote repository number 11 ** (current last one)
   - tools
   - platform-tools
   - build-tools-24.0.2
   - android-24
   - extra-android-m2repository
-# INSTRUMENTED TESTS ARE DISABLED - until Google or Travis fix the mess with emulation, only local tests are enabled
-#  - sys-img-armeabi-v7a-android-24
-before_install:
-#  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI -c 20M
-#  - emulator -avd test -no-skin -no-audio -no-window &
-#  - chmod +x ./wait_for_emulator.sh
-#  - ./wait_for_emulator.sh
-script:
-# force init of adb way before any Gradle task that uses ADB; prevents a timeout error that skips emulators of android-24
-  - adb devices
-# build app and assemble APK, in debug mode
-  - ./gradlew assembleDebug
-# run all the local unit tests of app module
-  - ./gradlew :testDebug
-# run all the instrumented tests of app module - DISABLED until we get an stable setup for Espresso in Travis
-# - ./gradlew connectedDebugAndroidTest --info
-# install app, then assemble and install instrumented tests of app module
-#  - ./gradlew :installDebug
-#  - ./gradlew :installDebugAndroidTest
-# run sample instrumented unit test
-#  - adb shell am instrument -w -e debug false -e class com.owncloud.android.datamodel.OCFileUnitTest com.owncloud.android.test/android.support.test.runner.AndroidJUnitRunner
+before_install: []
+branches: ''
+cache:
+  directories:
+  - $HOME/.m2
 env:
   global:
   - secure: h4Y7ZvgbvOj5T71ubRcw3Fy3KXF8qHugRFLGK3q2R9YuRsDAf8XH+Y/UiXyH8sac2QSj7Zlny1kA1DEJgwhTXs9wsAVKVJCQNTJGEvhm/4uQgPeNMzMv07Lqe8V+KUBsFH5qhfPJO357ERW0k2f2qljoLSHtHStclt7iGvFdynA=
@@ -40,3 +47,19 @@ env:
   - secure: ydxZrS7+1ht3p1tC6DE9W9bjLQGjMkwFBwyhNmcdEM6538kN8ZCBQe7NxSsCrC1nSDBLQ17Cziv0XJHl/pCfPrbkrPPgVFpjDfPeqC2zcGcCNcFQUEylXCvQ4uRU2hKL6dPqCsOQ57Pv3qwpPoprl/usoN5Wh8V7BKplU88ZaYM=
   matrix:
   - ANDROID_TARGET=android-24 ANDROID_ABI=armeabi-v7a
+jdk:
+- oraclejdk8
+language: android
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=94110b2b-1d58-46f7-9ed4-960efc266d87
+script:
+- adb devices
+- ./gradlew assembleDebug
+- ./gradlew :testDebug
+sudo: false
+# Modified by Insights Service at 2016-11-27 17:15:55.728586
